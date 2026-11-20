@@ -1,257 +1,70 @@
-# Clasificador de Spam — Proyecto Final de Aprendizaje Automático
+# Clasificador de spam con Machine Learning
 
-## Descripción del proyecto
+Proyecto final de la asignatura de Aprendizaje Automático (Grado en Ingeniería Matemática, Universidad CEU San Pablo, mayo de 2026). Proyecto en equipo.
 
-Este proyecto desarrolla un sistema de clasificación de correos electrónicos spam utilizando diferentes algoritmos de Machine Learning sobre el dataset Spambase de la UCI Machine Learning Repository.
+## Objetivo
 
-El objetivo principal es comparar múltiples modelos de clasificación y distintos enfoques de preprocesado y selección de variables para determinar cuál ofrece el mejor rendimiento en la detección de spam.
+Construir un clasificador de correos spam sobre el dataset **Spambase** (UCI) y elegir el modelo más adecuado para un filtro de correo real. En este problema, un **falso positivo** (un correo legítimo marcado como spam) es más grave que un falso negativo, así que el modelo final se elige priorizando la **precisión**, no solo la accuracy.
 
-El trabajo incluye:
+## Dataset
 
-- Análisis exploratorio de datos (EDA)
-- Estudio de correlaciones
-- Detección de outliers
-- Transformaciones logarítmicas
-- Selección de variables mediante correlación de Pearson
-- Reducción de dimensionalidad mediante PCA
-- Entrenamiento y evaluación de modelos de clasificación
-- Validación cruzada
-- Comparativa de resultados
+- **Spambase**, UCI Machine Learning Repository: https://archive.ics.uci.edu/dataset/94/spambase
+- 4.601 correos y 57 variables: frecuencia de palabras, frecuencia de caracteres especiales y longitud de las secuencias de mayúsculas.
+- Clasificación binaria: `1` = spam, `0` = no spam.
+- Se incluye una copia en `dataset.csv`.
 
----
+## Pipeline
 
-# Dataset
+1. **Análisis exploratorio:** valores nulos, tipos de datos, distribuciones y correlaciones con la variable objetivo.
+2. **Outliers:** se detectan con el método IQR, pero no se eliminan. En datos de frecuencias, los valores extremos contienen información útil.
+3. **Transformación logarítmica** `log(1+x)` para corregir el fuerte sesgo de las variables, seguida de **estandarización**.
+4. **Dos enfoques de preparación de variables:**
+   - Selección de variables por correlación de Pearson con la variable objetivo.
+   - Reducción de dimensionalidad con **PCA** (48 componentes que conservan el 95 % de la varianza).
+5. **Modelos entrenados en ambos enfoques:** regresión logística (umbral 0,5 y 0,7), árbol de decisión, KNN, SVM (kernel lineal y RBF), red neuronal MLP y Naive Bayes.
+6. **Evaluación:** accuracy, precisión, recall, F1-score, matriz de confusión y validación cruzada estratificada (5 folds).
 
-Se ha utilizado el dataset:
+## Resultados principales
 
-Spambase — UCI Machine Learning Repository
+Conjunto de test: 1.381 correos.
 
-- Dataset original: https://archive.ics.uci.edu/dataset/94/spambase
-- Tipo de problema: Clasificación binaria
-- Objetivo:
-  - 1 → Spam
-  - 0 → No Spam
+| Modelo | Enfoque | Accuracy | Precisión | Recall | Falsos positivos |
+|---|---|---|---|---|---|
+| **Regresión logística (umbral 0,7)** | Correlación | 0,916 | **0,961** | 0,819 | **18** |
+| SVM (RBF) | Correlación | 0,934 | 0,936 | 0,893 | 33 |
+| Red neuronal MLP (mejorada) | PCA | **0,946** | 0,934 | 0,930 | 36 |
 
-El dataset contiene variables relacionadas con:
+- La **mejor accuracy** (94,6 %) la obtiene la red neuronal MLP con PCA.
+- La **mayor precisión** y el menor número de falsos positivos los obtiene la regresión logística con el umbral de decisión subido a 0,7.
+- La validación cruzada confirma que la regresión logística con umbral 0,7 es estable: precisión media de 0,951 entre folds.
 
-- Frecuencia de palabras
-- Frecuencia de caracteres especiales
-- Variables estadísticas sobre el contenido del email
+## Modelo final
 
----
+**Regresión logística con umbral de decisión 0,7.** Subir el umbral de 0,5 a 0,7 obliga al modelo a exigir más evidencia antes de marcar un correo como spam. Pierde algo de recall, pero reduce los falsos positivos a la mitad respecto a los modelos con mejor accuracy. Además, es un modelo sencillo, interpretable y barato de poner en producción.
 
-# Tecnologías y librerías utilizadas
+PCA mantiene resultados muy competitivos y mejora la accuracy de la red neuronal, pero no mejora la precisión de la regresión logística, que es la métrica prioritaria en este problema.
 
-## Lenguaje
-
-- Python 3
-
-## Librerías principales
-
-```python
-pandas
-numpy
-matplotlib
-seaborn
-scikit-learn
-ucimlrepo
-```
-
-# Pipeline del proyecto
-
-## 1. Carga del dataset
-
-El dataset se descarga directamente desde `ucimlrepo` y posteriormente se transforma en un DataFrame para facilitar el análisis.
-
----
-
-## 2. Limpieza y análisis inicial
-
-Se realiza:
-
-- Comprobación de valores nulos
-- Revisión de tipos de datos
-- Estadísticos descriptivos
-- Distribuciones de variables
-
----
-
-## 3. Análisis de correlación
-
-Se estudia la relación entre las variables y la variable objetivo (`Class`) utilizando correlación de Pearson.
-
-Posteriormente:
-
-- Se aplican umbrales de correlación
-- Se seleccionan las variables más relevantes
-- Se generan heatmaps para visualizar dependencias
-
----
-
-## 4. Detección de outliers
-
-Se utiliza el método del IQR para detectar valores atípicos.
-
-Dado que los datos representan frecuencias de aparición de palabras, los outliers no se eliminan, ya que contienen información útil.
-
-Para reducir su impacto:
-
-- Se aplican transformaciones logarítmicas
-
----
-
-## 5. División Train/Test
-
-El dataset se divide en:
-
-- Datos de entrenamiento
-- Datos de prueba
-
-También se aplican técnicas de escalado cuando son necesarias.
-
----
-
-# Modelos utilizados
-
-## Regresión Logística
-
-Modelo lineal utilizado como baseline principal.
-
----
-
-## Árbol de Clasificación
-
-Modelo basado en reglas de decisión.
-
----
-
-## K-Nearest Neighbors (KNN)
-
-Clasificación basada en vecinos más cercanos.
-
----
-
-## Support Vector Machine (SVM)
-
-Modelo de clasificación mediante hiperplanos óptimos.
-
----
-
-## Red Neuronal (MLP)
-
-Perceptrón multicapa para clasificación no lineal.
-
----
-
-## Naive Bayes
-
-Clasificador probabilístico basado en el teorema de Bayes.
-
----
-
-# Feature Engineering con PCA
-
-Además del pipeline basado en correlación de Pearson, se implementa un segundo enfoque utilizando:
-
-## PCA (Principal Component Analysis)
-
-Objetivos:
-
-- Reducir dimensionalidad
-- Eliminar multicolinealidad
-- Mantener el 95% de la varianza del dataset
-
-Posteriormente, se vuelven a entrenar todos los modelos para comparar resultados entre:
-
-- Selección por correlación
-- Reducción mediante PCA
-
----
-
-# Evaluación de modelos
-
-Las métricas utilizadas incluyen:
-
-- Accuracy
-- Precision
-- Recall
-- F1-Score
-- Matriz de confusión
-- Validación cruzada
-
-Debido a la naturaleza del problema, se da especial importancia a:
-
-## Precision
-
-Minimizar falsos positivos es clave para evitar que correos legítimos sean marcados como spam.
-
----
-
-# Resultados y conclusiones
-
-## Principales conclusiones
-
-- Todos los modelos obtuvieron resultados sólidos y consistentes.
-- Los mejores resultados se obtuvieron principalmente con:
-  - Regresión logística
-  - Redes neuronales (MLP)
-- El enfoque basado en correlación lineal presentó un rendimiento ligeramente superior al pipeline PCA.
-- PCA logró mantener resultados muy competitivos reduciendo dimensionalidad y eliminando redundancias.
-
-## Conclusión final
-
-Ambos pipelines son válidos para resolver el problema de detección de spam. Sin embargo, la selección de variables mediante correlación lineal mostró una ligera ventaja en precisión y capacidad predictiva, aspecto especialmente importante en sistemas anti-spam.
-
----
-
-# Cómo ejecutar el proyecto
-
-## 1. Clonar el repositorio
+## Cómo ejecutarlo
 
 ```bash
-git clone <URL_DEL_REPOSITORIO>
-cd <NOMBRE_DEL_REPOSITORIO>
-```
-
-## 2. Instalar dependencias
-
-```bash
+git clone https://github.com/fernandoviolero/clasificador-spam-ml.git
+cd clasificador-spam-ml
 pip install pandas numpy matplotlib seaborn scikit-learn ucimlrepo jupyter
+jupyter notebook ProyectoFinal_definitivo.ipynb
 ```
 
-## 3. Ejecutar el notebook
+## Estructura
 
-```bash
-jupyter notebook
+```
+├── ProyectoFinal_definitivo.ipynb   # Notebook con todo el análisis
+├── dataset.csv                      # Copia del dataset Spambase
+└── README.md
 ```
 
-Abrir:
+## Autores
 
-```bash
-ProyectoFinal_definitivo.ipynb
-```
-
----
-
-# Estructura del proyecto
-
-```bash
-├── ProyectoFinal_definitivo.ipynb
-├── dataset.csv
-├── README.md
-```
-
----
-
-# Autor
-
-Proyecto realizado como trabajo final de Aprendizaje Automático.
-
----
-
-# Referencias
-
-- UCI Machine Learning Repository
-- Scikit-learn Documentation
-- Pandas Documentation
-- Seaborn Documentation
+- Hugo Fernández Cavero
+- Mario Gutiérrez Morano
+- Víctor Pérez Dalmases
+- Diego Ruiz Jover
+- Fernando Violero Muñoz
